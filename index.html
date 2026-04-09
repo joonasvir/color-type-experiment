@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Type Experiment</title>
+    <style>
+        @font-face {
+            font-family: 'Edict Display';
+            src: url('fonts/EdictDisplayTrial-Thin.otf') format('opentype');
+            font-weight: 100;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Edict Display';
+            src: url('fonts/EdictDisplayTrial-Light.otf') format('opentype');
+            font-weight: 300;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Edict Display';
+            src: url('fonts/EdictDisplayTrial-LightItalic.otf') format('opentype');
+            font-weight: 300;
+            font-style: italic;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Edict Display';
+            src: url('fonts/EdictDisplayTrial-Regular.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Edict Display';
+            src: url('fonts/EdictDisplayTrial-RegularItalic.otf') format('opentype');
+            font-weight: 400;
+            font-style: italic;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Edict Display';
+            src: url('fonts/EdictDisplayTrial-Bold.otf') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Edict Display';
+            src: url('fonts/EdictDisplayTrial-BoldItalic.otf') format('opentype');
+            font-weight: 700;
+            font-style: italic;
+            font-display: swap;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; }
+
+        body {
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* --- Control Panel --- */
+        .panel {
+            position: fixed;
+            left: 0; top: 0; bottom: 0;
+            width: 280px;
+            background: #f5f5f5;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            padding: 16px 14px;
+            z-index: 100;
+            font-family: system-ui, sans-serif;
+            font-size: 11px;
+            color: #333;
+            scrollbar-width: thin;
+        }
+
+        .panel h2 {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #999;
+            margin: 16px 0 8px;
+        }
+
+        .panel h2:first-child { margin-top: 0; }
+
+        .ctrl {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .ctrl label {
+            flex: 0 0 auto;
+            max-width: 100px;
+        }
+
+        .ctrl input[type="range"] {
+            flex: 1;
+            margin: 0 8px;
+            height: 3px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #ccc;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .ctrl input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #333;
+            cursor: pointer;
+        }
+
+        .ctrl .val {
+            flex: 0 0 36px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            color: #666;
+        }
+
+        .panel-btn {
+            width: 100%;
+            padding: 7px 10px;
+            margin-bottom: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+            font-family: system-ui, sans-serif;
+            font-size: 11px;
+            color: #333;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.15s;
+        }
+
+        .panel-btn:hover { background: #eee; }
+        .panel-btn.active { background: #333; color: #fff; border-color: #333; }
+
+        .cycle-btn {
+            width: 100%;
+            padding: 8px 10px;
+            margin-bottom: 5px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background: #333;
+            color: #fff;
+            font-family: system-ui, sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.15s;
+        }
+
+        .cycle-btn:hover { background: #555; }
+
+        /* --- Main content shifted right --- */
+        .wrap {
+            position: relative;
+            cursor: default;
+            overflow: visible;
+            padding: 1.5rem 2.5rem;
+            margin-left: 280px;
+        }
+
+        .wrap canvas {
+            position: absolute;
+            pointer-events: none;
+        }
+
+        #caps {
+            z-index: 1;
+        }
+
+        .line {
+            position: relative;
+            z-index: 3;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .c {
+            display: inline-block;
+            font-family: 'Edict Display', 'Inter', system-ui, sans-serif;
+            font-size: clamp(1.2rem, 3.2vw, 3.8rem);
+            font-weight: 400;
+            letter-spacing: 0.01em;
+            color: #1a1a2e;
+        }
+
+        .c.s { width: 0.35em; }
+    </style>
+</head>
+<body>
+    <div class="panel" id="panel"></div>
+
+    <div class="wrap" id="w">
+        <canvas id="caps"></canvas>
+        <div class="line" id="l"></div>
+    </div>
+
+    <script>
+    (() => {
+        const COPIES = [
+            { text: 'Personal software should feel like play', weight: 400, italic: false },
+            { text: 'Make it playful make it colorful', weight: 400, italic: true },
+            { text: 'Building should feel playful', weight: 700, italic: false },
+            { text: 'Sometimes, memories became colors.', weight: 300, italic: false },
+            { text: 'Type is a beautiful thing', weight: 700, italic: false },
+            { text: 'Nothing ordinary, everything felt', weight: 100, italic: false },
+            { text: 'Design is how it works', weight: 300, italic: true },
+        ];
+        let copyIdx = 0;
+        const PAD = 350;
+
+        // --- Tweakable config ---
+        const cfg = {
+            innerR:       0.2,
+            outerR:       2.5,
+            speedIn:      0.13,
+            speedOut:     0.09,
+            maxBlur:      11.5,
+            blurPow:      1.2,
+            maxScale:     1.0,
+            scalePow:     4,
+            lift:         29,
+            colorDelay:   0.55,
+            opacityThresh:0.9,
+            canvasBlur:   9,
+            blobDelay:    0.35,
+            blobRadius:   0.45,
+            blobLiftFollow: 1.1,
+            blobRiseMult: 0.65,
+            blobOpacity:  1.0,
+            colorSpread:  0.10,
+            colorSpeed:   0.00005,
+        };
+
+        // --- Build control panel ---
+        const sliders = [
+            { section: 'Activation' },
+            { key: 'innerR',    label: 'Inner radius',   min: 0, max: 4, step: 0.1 },
+            { key: 'outerR',    label: 'Outer radius',   min: 1, max: 15, step: 0.5 },
+            { key: 'speedIn',   label: 'Speed in',       min: 0.01, max: 0.3, step: 0.01 },
+            { key: 'speedOut',  label: 'Speed out',      min: 0.01, max: 0.2, step: 0.005 },
+            { section: 'Letter Effect' },
+            { key: 'lift',      label: 'Lift (px)',       min: 0, max: 60, step: 1 },
+            { key: 'maxBlur',   label: 'Max blur (px)',   min: 0, max: 30, step: 0.5 },
+            { key: 'blurPow',   label: 'Blur curve',      min: 1, max: 5, step: 0.1 },
+            { key: 'maxScale',  label: 'Max scale',      min: 1, max: 1.6, step: 0.01 },
+            { key: 'scalePow',  label: 'Scale curve',     min: 1, max: 5, step: 0.1 },
+            { key: 'colorDelay',label: 'Color delay',     min: 0, max: 0.8, step: 0.05 },
+            { key: 'opacityThresh', label: 'Opacity thresh', min: 0.3, max: 1, step: 0.05 },
+            { section: 'Color Blob' },
+            { key: 'canvasBlur',label: 'Blob blur (px)',  min: 0, max: 20, step: 1 },
+            { key: 'blobDelay', label: 'Blob delay',      min: 0, max: 0.8, step: 0.05 },
+            { key: 'blobRadius',label: 'Blob size',       min: 0.1, max: 2, step: 0.05 },
+            { key: 'blobLiftFollow', label: 'Blob lift follow', min: 0, max: 1.5, step: 0.05 },
+            { key: 'blobRiseMult', label: 'Blob rise',    min: 0, max: 2, step: 0.05 },
+            { key: 'blobOpacity', label: 'Blob opacity',  min: 0.1, max: 1, step: 0.05 },
+            { section: 'Color Cycling' },
+            { key: 'colorSpread', label: 'Color spread',  min: 0, max: 0.5, step: 0.01 },
+            { key: 'colorSpeed',  label: 'Cycle speed',   min: 0, max: 0.0003, step: 0.00001 },
+        ];
+
+        const panel = document.getElementById('panel');
+        const valEls = {};
+        const sliderInputs = {};
+
+        sliders.forEach(item => {
+            if (item.section) {
+                const h = document.createElement('h2');
+                h.textContent = item.section;
+                panel.appendChild(h);
+                return;
+            }
+            const div = document.createElement('div');
+            div.className = 'ctrl';
+
+            const lbl = document.createElement('label');
+            lbl.textContent = item.label;
+
+            const inp = document.createElement('input');
+            inp.type = 'range';
+            inp.min = item.min;
+            inp.max = item.max;
+            inp.step = item.step;
+            inp.value = cfg[item.key];
+
+            const val = document.createElement('span');
+            val.className = 'val';
+            val.textContent = Number(cfg[item.key]).toFixed(
+                item.step < 0.001 ? 5 : item.step < 0.1 ? 2 : item.step < 1 ? 1 : 0
+            );
+            valEls[item.key] = { el: val, step: item.step };
+
+            sliderInputs[item.key] = inp;
+            inp.addEventListener('input', () => {
+                cfg[item.key] = parseFloat(inp.value);
+                val.textContent = Number(inp.value).toFixed(
+                    item.step < 0.001 ? 5 : item.step < 0.1 ? 2 : item.step < 1 ? 1 : 0
+                );
+                // Live-update canvas blur
+                if (item.key === 'canvasBlur') {
+                    cvs.style.filter = cfg.canvasBlur > 0 ? `blur(${cfg.canvasBlur}px)` : '';
+                }
+            });
+
+            div.appendChild(lbl);
+            div.appendChild(inp);
+            div.appendChild(val);
+            panel.appendChild(div);
+        });
+
+        // --- Presets ---
+        const presets = {
+            'Warm Dissolve': {
+                innerR: 0.2, outerR: 2.5, speedIn: 0.13, speedOut: 0.09,
+                maxBlur: 11.5, blurPow: 1.2, maxScale: 1.0, scalePow: 4,
+                lift: 29, colorDelay: 0.55, opacityThresh: 0.9, canvasBlur: 9,
+                blobDelay: 0.35, blobRadius: 0.45, blobLiftFollow: 1.1,
+                blobRiseMult: 0.65, blobOpacity: 1.0, colorSpread: 0.10, colorSpeed: 0.00005,
+            },
+            'Tight & Subtle': {
+                innerR: 0.3, outerR: 2.5, speedIn: 0.08, speedOut: 0.03,
+                maxBlur: 4, blurPow: 3, maxScale: 1.08, scalePow: 4,
+                lift: 12, colorDelay: 0.55, opacityThresh: 0.9, canvasBlur: 2,
+                blobDelay: 0.6, blobRadius: 0.3, blobLiftFollow: 0.8,
+                blobRiseMult: 0.4, blobOpacity: 0.7, colorSpread: 0.1, colorSpeed: 0.00005,
+            },
+            'Big & Bold': {
+                innerR: 1, outerR: 8, speedIn: 0.14, speedOut: 0.05,
+                maxBlur: 14, blurPow: 1.8, maxScale: 1.35, scalePow: 2,
+                lift: 40, colorDelay: 0.25, opacityThresh: 0.65, canvasBlur: 8,
+                blobDelay: 0.3, blobRadius: 0.9, blobLiftFollow: 0.7,
+                blobRiseMult: 1.0, blobOpacity: 0.95, colorSpread: 0.3, colorSpeed: 0.00012,
+            },
+            'Dreamy Slow': {
+                innerR: 0.8, outerR: 6, speedIn: 0.05, speedOut: 0.02,
+                maxBlur: 10, blurPow: 2.5, maxScale: 1.15, scalePow: 3,
+                lift: 22, colorDelay: 0.5, opacityThresh: 0.85, canvasBlur: 12,
+                blobDelay: 0.5, blobRadius: 0.7, blobLiftFollow: 0.6,
+                blobRiseMult: 0.9, blobOpacity: 0.75, colorSpread: 0.12, colorSpeed: 0.00004,
+            },
+            'Snappy Pop': {
+                innerR: 0.2, outerR: 3, speedIn: 0.22, speedOut: 0.08,
+                maxBlur: 6, blurPow: 1.5, maxScale: 1.25, scalePow: 2,
+                lift: 35, colorDelay: 0.3, opacityThresh: 0.7, canvasBlur: 3,
+                blobDelay: 0.35, blobRadius: 0.45, blobLiftFollow: 0.85,
+                blobRiseMult: 0.5, blobOpacity: 0.92, colorSpread: 0.22, colorSpeed: 0.0001,
+            },
+        };
+
+        function applyPreset(name) {
+            const p = presets[name];
+            Object.assign(cfg, p);
+            // Update all slider UIs
+            Object.keys(p).forEach(key => {
+                if (sliderInputs[key]) {
+                    sliderInputs[key].value = p[key];
+                    const info = valEls[key];
+                    if (info) info.el.textContent = Number(p[key]).toFixed(
+                        info.step < 0.001 ? 5 : info.step < 0.1 ? 2 : info.step < 1 ? 1 : 0
+                    );
+                }
+            });
+            cvs.style.filter = cfg.canvasBlur > 0 ? `blur(${cfg.canvasBlur}px)` : '';
+            // Highlight active preset
+            presetBtns.forEach(b => b.classList.toggle('active', b.dataset.name === name));
+        }
+
+        // Build preset buttons
+        const presetBtns = [];
+        const ph = document.createElement('h2');
+        ph.textContent = 'Presets';
+        panel.appendChild(ph);
+
+        Object.keys(presets).forEach(name => {
+            const btn = document.createElement('button');
+            btn.className = 'panel-btn';
+            btn.textContent = name;
+            btn.dataset.name = name;
+            btn.addEventListener('click', () => applyPreset(name));
+            panel.appendChild(btn);
+            presetBtns.push(btn);
+        });
+
+        // --- Copy cycling ---
+        const ch2 = document.createElement('h2');
+        ch2.textContent = 'Copy & Type';
+        panel.appendChild(ch2);
+
+        const cycleBtn = document.createElement('button');
+        cycleBtn.className = 'cycle-btn';
+        cycleBtn.textContent = 'Next copy & style';
+        panel.appendChild(cycleBtn);
+
+        function rebuildText() {
+            const copy = COPIES[copyIdx];
+            // Clear existing spans
+            line.innerHTML = '';
+            chars.length = 0;
+            let idx = 0;
+            for (const ch of copy.text) {
+                const sp = document.createElement('span');
+                sp.className = 'c' + (ch === ' ' ? ' s' : '');
+                sp.textContent = ch === ' ' ? '\u00A0' : ch;
+                line.appendChild(sp);
+                if (ch !== ' ') chars.push({ el: sp, i: idx++ });
+            }
+            N = idx;
+            // Apply type style
+            line.style.fontWeight = copy.weight;
+            line.style.fontStyle = copy.italic ? 'italic' : 'normal';
+            // Re-measure
+            init();
+        }
+
+        cycleBtn.addEventListener('click', () => {
+            copyIdx = (copyIdx + 1) % COPIES.length;
+            rebuildText();
+        });
+
+        // --- Core logic ---
+        const hash = i => {
+            let x = Math.sin(i * 127.1 + i * 311.7) * 43758.5453;
+            return x - Math.floor(x);
+        };
+
+        // Warm first (orange/magenta) → cool last (blue/green)
+        const CSTOPS = [
+            [0.00, 255, 130, 0],
+            [0.12, 255, 80, 20],
+            [0.24, 240, 0, 100],
+            [0.36, 200, 0, 160],
+            [0.48, 140, 0, 200],
+            [0.60, 70, 0, 190],
+            [0.72, 0, 55, 160],
+            [0.84, 0, 115, 115],
+            [1.00, 0, 100, 60],
+        ];
+
+        function colorAt(t) {
+            t = Math.max(0, Math.min(1, t));
+            for (let i = 0; i < CSTOPS.length - 1; i++) {
+                const [at, ar, ag, ab] = CSTOPS[i];
+                const [bt, br, bg, bb] = CSTOPS[i + 1];
+                if (t <= bt) {
+                    const f = (t - at) / (bt - at);
+                    return [
+                        Math.round(ar + (br - ar) * f),
+                        Math.round(ag + (bg - ag) * f),
+                        Math.round(ab + (bb - ab) * f),
+                    ];
+                }
+            }
+            const l = CSTOPS[CSTOPS.length - 1];
+            return [l[1], l[2], l[3]];
+        }
+
+        function smoothstep(lo, hi, x) {
+            const t = Math.max(0, Math.min(1, (x - lo) / (hi - lo)));
+            return t * t * (3 - 2 * t);
+        }
+
+        const easeOut = t => 1 - (1 - t) ** 3;
+
+        // DOM
+        const wrap = document.getElementById('w');
+        const line = document.getElementById('l');
+        const cvs = document.getElementById('caps');
+        const ctx = cvs.getContext('2d');
+
+        cvs.style.filter = `blur(${cfg.canvasBlur}px)`;
+
+        const chars = [];
+        let li = 0;
+        for (const ch of COPIES[0].text) {
+            const sp = document.createElement('span');
+            sp.className = 'c' + (ch === ' ' ? ' s' : '');
+            sp.textContent = ch === ' ' ? '\u00A0' : ch;
+            line.appendChild(sp);
+            if (ch !== ' ') chars.push({ el: sp, i: li++ });
+        }
+        let N = li;
+
+        let blobs = [];
+        let dpr = 1;
+        let mouseX = 0;
+        let mouseActive = false;
+        let raf = null;
+
+        function init() {
+            dpr = devicePixelRatio || 1;
+            const r = wrap.getBoundingClientRect();
+            const cw = r.width + PAD * 2;
+            const ch = r.height + PAD * 2;
+            cvs.style.width = cw + 'px';
+            cvs.style.height = ch + 'px';
+            cvs.style.left = -PAD + 'px';
+            cvs.style.top = -PAD + 'px';
+            cvs.width = cw * dpr;
+            cvs.height = ch * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const wr = wrap.getBoundingClientRect();
+            blobs = chars.map(({ el, i }) => {
+                const rect = el.getBoundingClientRect();
+                const t = N > 1 ? i / (N - 1) : 0.5;
+                const h = rect.height;
+                return {
+                    cx: rect.left + rect.width / 2 - wr.left + PAD,
+                    cy: rect.top + h * 0.82 - wr.top + PAD,
+                    wx: rect.left + rect.width / 2 - wr.left,
+                    h,
+                    colorT: t,
+                    colorPhase: hash(i * 7) * Math.PI * 2,
+                    color: colorAt(t),
+                    capR: h * (2.5 + hash(i * 3) * 1.5),
+                    riseH: h * (1.5 + hash(i * 3 + 1) * 0.8),
+                    a: 0,
+                };
+            });
+        }
+
+        function tick() {
+            let anyActive = false;
+            const now = performance.now();
+
+            blobs.forEach((b, idx) => {
+                const globalT = (now * cfg.colorSpeed) % 1;
+                const letterOffset = Math.sin(now * 0.0003 + b.colorPhase) * cfg.colorSpread;
+                b.color = colorAt((globalT + letterOffset + 1) % 1);
+
+                let target = 0;
+                if (mouseActive) {
+                    const dist = Math.abs(mouseX - b.wx);
+                    const inner = b.h * cfg.innerR;
+                    const outer = b.h * cfg.outerR;
+                    target = 1 - smoothstep(inner, outer, dist);
+                }
+
+                const speed = target > b.a ? cfg.speedIn : cfg.speedOut;
+                b.a += (target - b.a) * speed;
+
+                if (b.a < 0.002) {
+                    b.a = 0;
+                } else {
+                    anyActive = true;
+                }
+
+                const a = b.a;
+                const el = chars[idx].el;
+
+                if (a > 0.003) {
+                    anyActive = true;
+
+                    const lift = easeOut(a) * -cfg.lift;
+                    const blur = Math.pow(a, cfg.blurPow) * cfg.maxBlur;
+                    const scale = 1 + Math.pow(a, cfg.scalePow) * (cfg.maxScale - 1);
+
+                    const cd = cfg.colorDelay;
+                    const ct = Math.max(0, (a - cd) / (1 - cd));
+                    const ct2 = ct * ct;
+                    const [cr, cg, cb] = b.color;
+                    const r = Math.round(26 + (cr - 26) * ct2);
+                    const g = Math.round(26 + (cg - 26) * ct2);
+                    const bl = Math.round(46 + (cb - 46) * ct2);
+
+                    const ot = cfg.opacityThresh;
+                    const opacity = a > ot ? Math.max(0, 1 - (a - ot) / (1 - ot)) : 1;
+
+                    el.style.filter = blur > 0.3 ? `blur(${blur.toFixed(1)}px)` : '';
+                    el.style.transform = `scale(${scale.toFixed(3)}) translateY(${lift.toFixed(1)}px)`;
+                    el.style.opacity = opacity.toFixed(3);
+                    el.style.color = `rgb(${r},${g},${bl})`;
+                } else {
+                    el.style.filter = '';
+                    el.style.transform = '';
+                    el.style.opacity = '';
+                    el.style.color = '';
+                }
+            });
+
+            render();
+
+            if (anyActive || mouseActive) {
+                raf = requestAnimationFrame(tick);
+            } else {
+                ctx.clearRect(0, 0, cvs.width, cvs.height);
+                raf = null;
+            }
+        }
+
+        function render() {
+            const w = cvs.width / dpr;
+            const h = cvs.height / dpr;
+            ctx.clearRect(0, 0, w, h);
+
+            for (const b of blobs) {
+                if (b.a < 0.005) continue;
+
+                const a = b.a;
+                const bd = cfg.blobDelay;
+                const blobA = Math.max(0, (a - bd) / (1 - bd));
+                if (blobA < 0.005) continue;
+
+                const r = b.capR * cfg.blobRadius * blobA * blobA;
+                const cx = b.cx;
+                const letterLift = easeOut(a) * cfg.lift;
+                const cy = b.cy - letterLift * cfg.blobLiftFollow - b.riseH * blobA * blobA * cfg.blobRiseMult;
+                const [cr, cg, cb] = b.color;
+                const alpha = blobA * blobA;
+
+                const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+                const bo = cfg.blobOpacity;
+                grad.addColorStop(0,    `rgba(${cr},${cg},${cb},${(bo * alpha).toFixed(3)})`);
+                grad.addColorStop(0.25, `rgba(${cr},${cg},${cb},${(bo * 0.68 * alpha).toFixed(3)})`);
+                grad.addColorStop(0.5,  `rgba(${cr},${cg},${cb},${(bo * 0.32 * alpha).toFixed(3)})`);
+                grad.addColorStop(0.75, `rgba(${cr},${cg},${cb},${(bo * 0.08 * alpha).toFixed(3)})`);
+                grad.addColorStop(1,    `rgba(${cr},${cg},${cb},0)`);
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Events
+        wrap.addEventListener('mouseenter', (e) => {
+            if (blobs.length === 0) init();
+            const rect = wrap.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseActive = true;
+            if (!raf) raf = requestAnimationFrame(tick);
+        });
+
+        wrap.addEventListener('mousemove', (e) => {
+            const rect = wrap.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseActive = true;
+            if (!raf) raf = requestAnimationFrame(tick);
+        });
+
+        wrap.addEventListener('mouseleave', () => {
+            mouseActive = false;
+        });
+
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(init, 150);
+        });
+
+        document.fonts.ready.then(init);
+    })();
+    </script>
+</body>
+</html>
