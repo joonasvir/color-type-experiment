@@ -499,6 +499,93 @@
             fontBtns.push(btn);
         });
 
+        // --- Animation Patterns ---
+        let patternMode = 'hover'; // 'hover' | pattern name
+
+        const patterns = {
+            'Wave': (now, idx, N) => {
+                const speed = 0.0018;
+                const spacing = 0.35;
+                const raw = Math.sin(now * speed - idx * spacing);
+                // Only activate on the positive half, smooth the edges
+                return Math.pow(Math.max(0, raw), 1.4);
+            },
+            'Breathe': (now, idx, N) => {
+                // Unified pulse with a gentle per-letter ripple
+                const base = (Math.sin(now * 0.0012) + 1) / 2;
+                const ripple = Math.sin(now * 0.0008 + idx * 0.15) * 0.12;
+                return Math.max(0, Math.min(1, base * 0.8 + ripple));
+            },
+            'Cascade': (now, idx, N) => {
+                // Sweep left→right, pause, repeat
+                const sweep = 2800;
+                const pause = 1800;
+                const cycle = sweep + pause;
+                const t = (now % cycle) / sweep;
+                if (t > 1) return 0;
+                // Smooth cursor position with easeInOut
+                const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                const cursor = eased * (N + 4) - 2;
+                const dist = idx - cursor;
+                // Asymmetric: sharp leading edge, soft trailing tail
+                if (dist > 0) return Math.max(0, 1 - dist / 2.5);
+                return Math.max(0, 1 + dist / 5);
+            },
+            'Sparkle': (now, idx, N) => {
+                // Multiple overlapping random bloom events
+                let peak = 0;
+                for (let e = 0; e < 6; e++) {
+                    const period = 1600 + e * 500;
+                    const phase = now / period;
+                    const seed = Math.floor(phase) * 137 + e * 73;
+                    let sx = Math.sin(seed * 127.1 + seed * 311.7) * 43758.5453;
+                    sx = sx - Math.floor(sx);
+                    const targetIdx = Math.floor(sx * N);
+                    const t = phase % 1;
+                    // Smooth bell: quick rise, slow fall
+                    const intensity = t < 0.25
+                        ? t / 0.25
+                        : Math.max(0, 1 - (t - 0.25) / 0.75);
+                    const dist = Math.abs(idx - targetIdx);
+                    const spread = intensity * Math.max(0, 1 - dist / 3);
+                    peak = Math.max(peak, spread);
+                }
+                return peak;
+            },
+        };
+
+        const pah = document.createElement('h2');
+        pah.textContent = 'Patterns';
+        panel.appendChild(pah);
+
+        const patternBtns = [];
+
+        // Hover (default) button
+        const hoverBtn = document.createElement('button');
+        hoverBtn.className = 'panel-btn active';
+        hoverBtn.textContent = 'Hover (manual)';
+        hoverBtn.addEventListener('click', () => {
+            patternMode = 'hover';
+            patternBtns.forEach(b => b.classList.remove('active'));
+            hoverBtn.classList.add('active');
+        });
+        panel.appendChild(hoverBtn);
+        patternBtns.push(hoverBtn);
+
+        Object.keys(patterns).forEach(name => {
+            const btn = document.createElement('button');
+            btn.className = 'panel-btn';
+            btn.textContent = name;
+            btn.addEventListener('click', () => {
+                patternMode = name;
+                patternBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (!raf) raf = requestAnimationFrame(tick);
+            });
+            panel.appendChild(btn);
+            patternBtns.push(btn);
+        });
+
         // --- Core logic ---
         const hash = i => {
             let x = Math.sin(i * 127.1 + i * 311.7) * 43758.5453;
@@ -611,7 +698,9 @@
                 b.color = colorAt((globalT + letterOffset + 1) % 1);
 
                 let target = 0;
-                if (mouseActive) {
+                if (patternMode !== 'hover') {
+                    target = patterns[patternMode](now, idx, N);
+                } else if (mouseActive) {
                     const dist = Math.abs(mouseX - b.wx);
                     const inner = b.h * cfg.innerR;
                     const outer = b.h * cfg.outerR;
@@ -662,7 +751,7 @@
 
             render();
 
-            if (anyActive || mouseActive) {
+            if (anyActive || mouseActive || patternMode !== 'hover') {
                 raf = requestAnimationFrame(tick);
             } else {
                 ctx.clearRect(0, 0, cvs.width, cvs.height);
