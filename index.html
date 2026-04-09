@@ -55,6 +55,42 @@
             font-display: swap;
         }
 
+        @font-face {
+            font-family: 'Selecta';
+            src: url('fonts/Selecta-Light.otf') format('opentype');
+            font-weight: 300; font-style: normal; font-display: swap;
+        }
+        @font-face {
+            font-family: 'Selecta';
+            src: url('fonts/Selecta-LightItalic.otf') format('opentype');
+            font-weight: 300; font-style: italic; font-display: swap;
+        }
+        @font-face {
+            font-family: 'Selecta';
+            src: url('fonts/Selecta-Regular.otf') format('opentype');
+            font-weight: 400; font-style: normal; font-display: swap;
+        }
+        @font-face {
+            font-family: 'Selecta';
+            src: url('fonts/Selecta-Bold.otf') format('opentype');
+            font-weight: 700; font-style: normal; font-display: swap;
+        }
+        @font-face {
+            font-family: 'Kalice';
+            src: url('fonts/Kalice-Trial-Regular.otf') format('opentype');
+            font-weight: 400; font-style: normal; font-display: swap;
+        }
+        @font-face {
+            font-family: 'Kalice';
+            src: url('fonts/Kalice-Trial-Italic.otf') format('opentype');
+            font-weight: 400; font-style: italic; font-display: swap;
+        }
+        @font-face {
+            font-family: 'Kalice';
+            src: url('fonts/Kalice-Trial-Bold.otf') format('opentype');
+            font-weight: 700; font-style: normal; font-display: swap;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; }
 
@@ -431,6 +467,35 @@
         cycleBtn.addEventListener('click', () => {
             copyIdx = (copyIdx + 1) % COPIES.length;
             rebuildText();
+        });
+
+        // --- Font chooser ---
+        const FONTS = [
+            { name: 'Edict Display', family: "'Edict Display'" },
+            { name: 'Selecta', family: "'Selecta'" },
+            { name: 'Kalice', family: "'Kalice'" },
+        ];
+        let currentFont = 0;
+
+        const fh = document.createElement('h2');
+        fh.textContent = 'Typeface';
+        panel.appendChild(fh);
+
+        const fontBtns = [];
+        FONTS.forEach((f, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'panel-btn' + (i === 0 ? ' active' : '');
+            btn.textContent = f.name;
+            btn.addEventListener('click', () => {
+                currentFont = i;
+                line.style.fontFamily = f.family + ", system-ui, sans-serif";
+                fontBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // Re-measure after font swap
+                requestAnimationFrame(() => { init(); });
+            });
+            panel.appendChild(btn);
+            fontBtns.push(btn);
         });
 
         // --- Core logic ---
